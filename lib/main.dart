@@ -1,66 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:urban_lens/src/features/camera/data/datasources/camera_remote_data_source.dart';
+import 'package:urban_lens/src/features/camera/data/repositories_impl/camera_repository_impl.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MaterialApp(home: UrbanLensTest()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class UrbanLensTest extends StatefulWidget {
+  const UrbanLensTest({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+  State<UrbanLensTest> createState() => _UrbanLensTestState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class _UrbanLensTestState extends State<UrbanLensTest> {
+  String _status = "Idle";
 
-  final String title;
+  Future<void> _testCamera() async {
+    setState(() => _status = "Connecting to Native...");
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+    // Manual Dependency Injection (We will use Riverpod later)
+    final dataSource = CameraRemoteDataSourceImpl();
+    final repository = CameraRepositoryImpl(remoteDataSource: dataSource);
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+    final result = await repository.captureImage();
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+    result.fold((failure) => setState(() => _status = "Error: ${failure.message}"), (path) => setState(() => _status = "Success! Path: $path"));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+          children: [
+            Text(_status, textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: _testCamera, child: const Text("Test Native Bridge")),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
